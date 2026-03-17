@@ -10,14 +10,14 @@
     <style>
 body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #e9ecef; 
+            background-color: #011140; 
             padding: 40px; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
         }
         .box { 
-            background: white; 
+            background: #565773; 
             border-radius: 12px; 
             padding: 30px; 
             margin-bottom: 25px; 
@@ -36,7 +36,7 @@ body {
         button { 
             padding: 12px 20px; 
             cursor: pointer; 
-            background: #4a90e2; 
+            background: #0a2c59; 
             color: white; 
             border: none; 
             border-radius: 6px; 
@@ -46,7 +46,7 @@ body {
         }
         button:hover { background: #357abd; }
         pre { 
-            background: #272822; 
+            background: #000000; 
             color: #f8f8f2; 
             padding: 15px; 
             border-radius: 6px; 
@@ -54,30 +54,30 @@ body {
             overflow-x: auto;
         }
         ul { list-style: none; padding: 0; }
-        li { padding: 8px 0; border-bottom: 1px solid #eee; color: #555; }
+        li { padding: 8px 0; border-bottom: 1px solid #eee; color: #000; }
     </style>
 </head>
 <body>
 
     <div id="auth-section" class="box">
-        <h3>Login (Backend Privado)</h3>
+        <h3>Login</h3>
         <input type="text" id="user" placeholder="Usuario">
-        <input type="password" id="pass" placeholder="Password">
+        <input type="password" id="pass" placeholder="contraseña">
         <button id="btnLogin">Ingresar</button>
     </div>
 
     <div class="box">
-        <h3>Buscador de Provincias (API Pública - Georef)</h3>
-        <p><small>Escribe más de 2 letras para buscar...</small></p>
+        <h3>Buscador de Provincias</h3>
+        <p><small>Escribe al menos 4 letras</small></p>
         <input type="text" id="buscador" placeholder="Escribe para buscar...">
         <ul id="resultados-publicos"></ul>
     </div>
 
     <div id="private-section" class="box hidden">
-        <h3>Panel de Usuario (Protegido por JWT)</h3>
+        <h3>Panel de Usuario</h3>
         <button id="btnVerPerfil">Consultar Mi Perfil</button>
         <pre id="perfil-data"></pre>
-        <button onclick="logout()" style="background:#dc3545;">Cerrar Sesión</button>
+        <button onclick="logout()" style="background:#8d0311;">Cerrar Sesión</button>
     </div>
 
     <script>
