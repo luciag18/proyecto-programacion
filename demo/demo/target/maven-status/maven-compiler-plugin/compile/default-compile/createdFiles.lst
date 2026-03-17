@@ -1,0 +1,5 @@
+com\example\demo\controllers\UserController.class
+com\example\demo\Application.class
+com\example\demo\controllers\AuthController.class
+com\example\demo\models\UserCredentials.class
+com\example\demo\security\JwtUtil.class

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tecnicatura Programación IV - Integración</title>
+    
+    <script src="https://unpkg.com/rxjs@7.8.1/dist/bundles/rxjs.umd.min.js"></script>
+    
+    <style>
+body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #e9ecef; 
+            padding: 40px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+        .box { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 30px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 500px; 
+        }
+        .hidden { display: none; }
+        input { 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ced4da; 
+            border-radius: 6px; 
+            width: calc(100% - 22px); 
+        }
+        button { 
+            padding: 12px 20px; 
+            cursor: pointer; 
+            background: #4a90e2; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button:hover { background: #357abd; }
+        pre { 
+            background: #272822; 
+            color: #f8f8f2; 
+            padding: 15px; 
+            border-radius: 6px; 
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        ul { list-style: none; padding: 0; }
+        li { padding: 8px 0; border-bottom: 1px solid #eee; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-section" class="box">
+        <h3>Login (Backend Privado)</h3>
+        <input type="text" id="user" placeholder="Usuario">
+        <input type="password" id="pass" placeholder="Password">
+        <button id="btnLogin">Ingresar</button>
+    </div>
+
+    <div class="box">
+        <h3>Buscador de Provincias (API Pública - Georef)</h3>
+        <p><small>Escribe más de 2 letras para buscar...</small></p>
+        <input type="text" id="buscador" placeholder="Escribe para buscar...">
+        <ul id="resultados-publicos"></ul>
+    </div>
+
+    <div id="private-section" class="box hidden">
+        <h3>Panel de Usuario (Protegido por JWT)</h3>
+        <button id="btnVerPerfil">Consultar Mi Perfil</button>
+        <pre id="perfil-data"></pre>
+        <button onclick="logout()" style="background:#dc3545;">Cerrar Sesión</button>
+    </div>
+
+    <script>
+        const { fromEvent, map, filter, debounceTime, distinctUntilChanged, switchMap, catchError, of } = rxjs;
+        const { ajax } = rxjs.ajax;
+
+        // --- GESTIÓN DE LOGIN ---
+        fromEvent(document.getElementById('btnLogin'), 'click').subscribe(async () => {
+            const username = document.getElementById('user').value;
+            const password = document.getElementById('pass').value;
+
+            try {
+                const response = await fetch('http://localhost:8080/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('jwt_token', data.token); // Guardamos el token
+                    alert("Login exitoso");
+                    showPrivateUI(true);
+                } else {
+                    alert("Error: Usuario o contraseña incorrectos");
+                }
+            } catch (e) {
+                console.error("No se pudo conectar con el Backend. ¿Está corriendo IntelliJ?");
+                alert("Error de conexión con el servidor");
+            }
+        });
+
+        // --- BUSCADOR REACTIVO (RxJS + API Georef) ---
+        const inputBuscador = document.getElementById('buscador');
+        fromEvent(inputBuscador, 'input').pipe(
+            map(e => e.target.value.trim()),
+            filter(text => text.length > 2),
+            debounceTime(400),
+            distinctUntilChanged(),
+            switchMap(term => 
+                ajax.getJSON(`https://apis.datos.gob.ar/georef/api/provincias?nombre=${term}`).pipe(
+                    catchError(err => of({ provincias: [] }))
+                )
+            )
+        ).subscribe(res => {
+            const list = document.getElementById('resultados-publicos');
+            list.innerHTML = res.provincias.map(p => `<li>${p.nombre}</li>`).join('');
+        });
+
+        // --- CONSULTA AL PERFIL (JWT) ---
+        fromEvent(document.getElementById('btnVerPerfil'), 'click').pipe(
+            switchMap(() => {
+                const token = localStorage.getItem('jwt_token');
+                return ajax({
+                    url: 'http://localhost:8080/api/perfil',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).pipe(
+                    map(r => r.response),
+                    catchError(err => {
+                        alert("Sesión expirada o no autorizada");
+                        logout();
+                        return of({ error: "No autorizado" });
+                    })
+                );
+            })
+        ).subscribe(data => {
+            document.getElementById('perfil-data').innerText = JSON.stringify(data, null, 2);
+        });
+
+        // FUNCIONES DE UTILIDAD
+        function showPrivateUI(isLoggedIn) {
+            document.getElementById('auth-section').classList.toggle('hidden', isLoggedIn);
+            document.getElementById('private-section').classList.toggle('hidden', !isLoggedIn);
+        }
+
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            location.reload();
+        }
+
+        // Al cargar, verificar si ya hay un token
+        if (localStorage.getItem('jwt_token')) {
+            showPrivateUI(true);
+        }
+    </script>
+</body>
+</html>
